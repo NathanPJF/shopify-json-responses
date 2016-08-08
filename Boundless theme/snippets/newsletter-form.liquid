@@ -1,0 +1,58 @@
+<!-- snippets/newsletter-form.liquid -->
+{% if section_number > 1 and number_of_index_sections > 1 %}
+  <hr class="hr--clear">
+{% endif %}
+
+<div class="newsletter text-center">
+  <div class="wrapper">
+    {% comment %}
+
+      MailChimp is the go-to newsletter service for Shopify.
+      Use the link below to find your MailChimp "form action"
+      and insert it in your site settings.
+
+      MailChimp newsletter integration and requirement:
+       - http://docs.shopify.com/support/configuration/store-customization/where-do-i-get-my-mailchimp-form-action
+
+    {% endcomment %}
+    <h2>{{ 'general.newsletter_form.newsletter_email' | t }}</h2>
+    {% if settings.newsletter_form_action != blank %}
+      <form action="{{ settings.newsletter_form_action }}" method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" target="_blank">
+        <div class="input-group">
+          <label for="Email" class="newsletter__label label--hidden">{{ 'general.newsletter_form.email_placeholder' | t }}</label>
+          <input type="email" value="{% if customer %}{{ customer.email }}{% endif %}" placeholder="{{ 'general.newsletter_form.email_placeholder' | t }}" name="EMAIL" id="Email" class="input-group__field newsletter__input" autocorrect="off" autocapitalize="off">
+          <span class="input-group__btn">
+            <button type="submit" class="btn newsletter__submit" name="subscribe" id="Subscribe">
+              <span class="newsletter__submit-text--large">{{ 'general.newsletter_form.submit' | t }}</span>
+            </button>
+          </span>
+        </div>
+      </form>
+    {% else %}
+      {% form 'customer' %}
+        {{ form.errors | default_errors }}
+        {% if form.posted_successfully? %}
+          <p class="form--success">{{ 'general.newsletter_form.confirmation' | t }}</p>
+        {% else %}
+          <div class="input-group">
+            <input type="hidden" name="contact[tags]" value="newsletter">
+            <label for="Email" class="newsletter__label label--hidden">{{ 'general.newsletter_form.email_placeholder' | t }}</label>
+            <input type="email" value="{% if customer %}{{ customer.email }}{% endif %}" placeholder="{{ 'general.newsletter_form.email_placeholder' | t }}" name="contact[email]" id="Email" class="input-group__field newsletter__input" autocorrect="off" autocapitalize="off">
+            <span class="input-group__btn">
+              <button type="submit" class="btn newsletter__submit" name="commit" id="Subscribe">
+                <span class="newsletter__submit-text--large">{{ 'general.newsletter_form.submit' | t }}</span>
+              </button>
+            </span>
+          </div>
+        {% endif %}
+      {% endform %}
+    {% endif %}
+  </div>
+</div>
+
+{% comment %}
+  Add bottom spacing if it's the last index section
+{% endcomment %}
+{% if section_number == number_of_index_sections %}
+  <hr class="hr--clear">
+{% endif %}

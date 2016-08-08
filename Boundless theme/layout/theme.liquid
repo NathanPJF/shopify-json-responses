@@ -1,0 +1,579 @@
+<!doctype html>
+<!--[if IE 9]> <html class="ie9 no-js" lang="{{ shop.locale }}"> <![endif]-->
+<!--[if (gt IE 9)|!(IE)]><!--> <html class="no-js" lang="{{ shop.locale }}"> <!--<![endif]-->
+<head>
+
+  <!-- Basic page needs ================================================== -->
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <meta name="theme-color" content="{{ settings.color_nav_bg }}">
+
+  {% if settings.favicon_enable %}
+    <link rel="shortcut icon" href="{{ 'favicon.png' | asset_url }}" type="image/png" />
+  {% endif %}
+
+  <link rel="canonical" href="{{ canonical_url }}">
+  <!-- Title and description ================================================== -->
+  <title>
+  {{ page_title }}{% if current_tags %}{% assign meta_tags = current_tags | join: ', ' %} &ndash; {{ 'general.meta.tags' | t: tags: meta_tags }}{% endif %}{% if current_page != 1 %} &ndash; {{ 'general.meta.page' | t: page: current_page }}{% endif %}{% unless page_title contains shop.name %} &ndash; {{ shop.name }}{% endunless %}
+  </title>
+
+  {% if page_description %}
+    <meta name="description" content="{{ page_description | escape }}">
+  {% endif %}
+
+  <!-- Social Meta Tags ===================================== -->
+  {% include 'social-meta-tags' %}
+
+  <!-- CSS ================================================== -->
+  {{ 'theme.scss.css' | asset_url | stylesheet_tag }}
+
+  <!-- Google Fonts | from theme settings ================================================== -->
+  {% if settings.type_base_family contains 'Google' %}
+    {% assign type_base_parts = settings.type_base_family | split: '_' %}
+    {% capture base_google_url %}{{ type_base_parts[1] }}:{{ type_base_parts[2] }}{% endcapture %}
+    {{ '//fonts.googleapis.com/css?family=' | append: base_google_url | stylesheet_tag }}
+  {% endif %}
+  {% if settings.type_header_family contains 'Google' %}
+    {% unless settings.type_header_family contains type_base_parts[1] %}
+      {% assign type_header_parts = settings.type_header_family | split: '_' %}
+      {% capture header_google_url %}{{ type_header_parts[1] }}:{{ type_header_parts[2] }}{% endcapture %}
+      {{ '//fonts.googleapis.com/css?family=' | append: header_google_url | stylesheet_tag }}
+    {% endunless %}
+  {% endif %}
+
+  <!-- Header hook for plugins ================================================== -->
+  {{ content_for_header }}
+
+  <!-- Fixes for Older Versions of IE ==================================================-->
+  {{ '//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js' | script_tag }}
+  {{ 'modernizr.min.js' | asset_url | script_tag }}
+
+  {% comment %}
+    If you store has customer accounts disabled, you can remove the following JS file
+  {% endcomment %}
+  {% if template contains 'customers' %}
+    {{ 'shopify_common.js' | shopify_asset_url | script_tag }}
+  {% endif %}
+
+</head>
+
+<body id="{{ page_title | handle }}" class="{% if customer %}customer-logged-in {% endif %}template-{{ template | replace: '.', ' ' | truncatewords: 1, '' | handle }}" >
+  <div id="SearchDrawer" class="search-bar drawer drawer--top">
+    <div class="search-bar__table">
+      <form action="/search" method="get" class="search-bar__table-cell search-bar__form" role="search">
+        <div class="search-bar__table">
+          <div class="search-bar__table-cell search-bar__icon-cell">
+            <button type="submit" class="search-bar__icon-button search-bar__submit">
+              <span class="icon icon-search" aria-hidden="true"></span>
+              <span class="icon__fallback-text">{{ 'general.search.submit' | t }}</span>
+            </button>
+          </div>
+          <div class="search-bar__table-cell">
+            <input type="search" id="SearchInput" name="q" value="{{ search.terms | escape }}" placeholder="{{ 'general.search.placeholder' | t }}" aria-label="{{ 'general.search.placeholder' | t }}" class="search-bar__input">
+          </div>
+        </div>
+      </form>
+      <div class="search-bar__table-cell text-right">
+        <button type="button" class="search-bar__icon-button search-bar__close js-drawer-close">
+          <span class="icon icon-x" aria-hidden="true"></span>
+          <span class="icon__fallback-text">{{ 'general.search.close_search' | t }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div id="NavDrawer" class="drawer drawer--left">
+    <div class="drawer__header">
+      <div class="drawer__close">
+        <button type="button" class="drawer__close-button js-drawer-close">
+          <span class="icon icon-x" aria-hidden="true"></span>
+          <span class="icon__fallback-text">{{ 'layout.drawers.close_menu' | t }}</span>
+        </button>
+      </div>
+    </div>
+    <div class="drawer__inner">
+      <ul class="drawer-nav">
+        {% for link in linklists.main-menu.links %}
+          {% assign child_list_handle = link.title | handleize %}
+          {% if linklists[child_list_handle].links != blank %}
+            {% comment %} See if nav has any active childlist items {% endcomment %}
+            {% assign has_active_child_link = false %}
+            {% for childlink in linklists[child_list_handle].links %}
+              {% if childlink.active %}
+                {% assign has_active_child_link = true %}
+              {% endif %}
+            {% endfor %}
+            <li class="drawer-nav__item{% unless template == 'index' %}{% if link.active %} drawer-nav__item--active{% endif %}{% endunless %}" aria-haspopup="true">
+              <div class="drawer-nav__has-sublist{% if has_active_child_link %} drawer-nav--expanded{% endif %}">
+                <a href="{{ link.url }}" class="drawer-nav__link h2">{{ link.title }}</a>
+                <div class="drawer-nav__toggle">
+                  <button type="button" class="drawer-nav__toggle-button">
+                    <span class="drawer-nav__toggle-open">
+                      <span class="icon icon-plus" aria-hidden="true"></span>
+                      <span class="icon__fallback-text">See More</span>
+                    </span>
+                    <span class="drawer-nav__toggle-close">
+                      <span class="icon icon-minus" aria-hidden="true"></span>
+                      <span class="icon__fallback-text">{{ 'cart.general.close_cart' | t }}</span>
+                    </span>
+                  </button>
+                </div>
+              </div>
+              <ul class="drawer-nav__sublist">
+                {% for childlink in linklists[child_list_handle].links %}
+                  <li class="drawer-nav__item{% unless template == 'index' %}{% if childlink.active %} drawer-nav__item--active{% endif %}{% endunless %}">
+                    <a href="{{ childlink.url }}" class="drawer-nav__link">{{ childlink.title | escape }}</a>
+                  </li>
+                {% endfor %}
+              </ul>
+            </li>
+          {% else %}
+            <li class="drawer-nav__item{% unless template == 'index' %}{% if link.active %} drawer-nav__item--active{% endif %}{% endunless %}">
+              <a href="{{ link.url }}" class="drawer-nav__link h2">{{ link.title }}</a>
+            </li>
+          {% endif %}
+        {% endfor %}
+
+        <li class="drawer-nav__spacer"></li>
+
+        {% if shop.customer_accounts_enabled %}
+          {% if customer %}
+            <li class="drawer-nav__item drawer-nav__item--secondary">
+              <a href="/account">{{ 'layout.customer.account' | t }}</a>
+            </li>
+            <li class="drawer-nav__item drawer-nav__item--secondary">
+              {{ 'layout.customer.log_out' | t | customer_logout_link }}
+            </li>
+          {% else %}
+            <li class="drawer-nav__item drawer-nav__item--secondary">
+              {{ 'layout.customer.log_in' | t | customer_login_link }}
+            </li>
+            <li class="drawer-nav__item drawer-nav__item--secondary">
+              {{ 'layout.customer.create_account' | t | customer_register_link }}
+            </li>
+          {% endif %}
+        {% endif %}
+        {% for link in linklists.footer.links %}
+          <li class="drawer-nav__item drawer-nav__item--secondary"><a href="{{ link.url }}">{{ link.title }}</a></li>
+        {% endfor %}
+      </ul>
+
+      <ul class="list--inline social-icons social-icons--drawer">
+        {% if settings.social_twitter_link != blank %}
+          <li>
+            <a href="{{ settings.social_twitter_link }}" title="{{ 'layout.footer.social_platform' | t: name: shop.name, platform: 'Twitter' }}">
+              <span class="icon icon-twitter" aria-hidden="true"></span>
+              <span class="visually-hidden">Twitter</span>
+            </a>
+          </li>
+        {% endif %}
+        {% if settings.social_facebook_link != blank %}
+          <li>
+            <a href="{{ settings.social_facebook_link }}" title="{{ 'layout.footer.social_platform' | t: name: shop.name, platform: 'Facebook' }}">
+              <span class="icon icon-facebook" aria-hidden="true"></span>
+              <span class="visually-hidden">Facebook</span>
+            </a>
+          </li>
+        {% endif %}
+        {% if settings.social_pinterest_link != blank %}
+          <li>
+            <a href="{{ settings.social_pinterest_link }}" title="{{ 'layout.footer.social_platform' | t: name: shop.name, platform: 'Pinterest' }}">
+              <span class="icon icon-pinterest" aria-hidden="true"></span>
+              <span class="visually-hidden">Pinterest</span>
+            </a>
+          </li>
+        {% endif %}
+        {% if settings.social_google_plus_link != blank %}
+          <li>
+            <a href="{{ settings.social_google_plus_link }}" rel="publisher" title="{{ 'layout.footer.social_platform' | t: name: shop.name, platform: 'Google Plus' }}">
+              <span class="icon icon-google_plus" aria-hidden="true"></span>
+              <span class="visually-hidden">Google Plus</span>
+            </a>
+          </li>
+        {% endif %}
+        {% if settings.social_instagram_link != blank %}
+          <li>
+            <a href="{{ settings.social_instagram_link }}" title="{{ 'layout.footer.social_platform' | t: name: shop.name, platform: 'Instagram' }}">
+              <span class="icon icon-instagram" aria-hidden="true"></span>
+              <span class="visually-hidden">Instagram</span>
+            </a>
+          </li>
+        {% endif %}
+        {% if settings.social_tumblr_link != blank %}
+          <li>
+            <a href="{{ settings.social_tumblr_link }}" title="{{ 'layout.footer.social_platform' | t: name: shop.name, platform: 'Tumblr' }}">
+              <span class="icon icon-tumblr" aria-hidden="true"></span>
+              <span class="visually-hidden">Tumblr</span>
+            </a>
+          </li>
+        {% endif %}
+        {% if settings.social_youtube_link != blank %}
+          <li>
+            <a href="{{ settings.social_youtube_link }}" title="{{ 'layout.footer.social_platform' | t: name: shop.name, platform: 'YouTube' }}">
+              <span class="icon icon-youtube" aria-hidden="true"></span>
+              <span class="visually-hidden">YouTube</span>
+            </a>
+          </li>
+        {% endif %}
+        {% if settings.social_vimeo_link != blank %}
+          <li>
+            <a href="{{ settings.social_vimeo_link }}" title="{{ 'layout.footer.social_platform' | t: name: shop.name, platform: 'Vimeo' }}">
+              <span class="icon icon-vimeo" aria-hidden="true"></span>
+              <span class="visually-hidden">Vimeo</span>
+            </a>
+          </li>
+        {% endif %}
+        {% if settings.social_fancy_link != blank %}
+          <li>
+            <a href="{{ settings.social_fancy_link }}" title="{{ 'layout.footer.social_platform' | t: name: shop.name, platform: 'Fancy' }}">
+              <span class="icon icon-fancy" aria-hidden="true"></span>
+              <span class="visually-hidden">Fancy</span>
+            </a>
+          </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+  <div id="CartDrawer" class="drawer drawer--right drawer--has-fixed-footer">
+      <div class="drawer__header">
+        <div class="drawer__close">
+          <button type="button" class="drawer__close-button js-drawer-close">
+            <span class="icon icon-x" aria-hidden="true"></span>
+            <span class="icon__fallback-text">{{ 'cart.general.close_cart' | t }}</span>
+          </button>
+        </div>
+      </div>
+      <div class="drawer__inner">
+        <div id="CartContainer">
+        </div>
+      </div>
+  </div>
+
+  <div id="PageContainer">
+    <div class="site-header-wrapper">
+      <div class="site-header-container">
+        <header class="site-header" role="banner">
+          <div class="grid grid--no-gutters grid--table site-header__inner">
+            <div class="grid__item one-third medium-up--one-sixth">
+              <button type="button" class="site-header__link text-link site-header__toggle-nav js-drawer-open-left">
+                <span class="icon icon-hamburger" aria-hidden="true"></span>
+                <span class="icon__fallback-text">{{ 'layout.navigation.menu' | t }}</span>
+              </button>
+            </div>
+            <div class="grid__item one-third medium-up--two-thirds">
+
+              {% comment %}
+                Use the uploaded logo from theme settings if enabled.
+                Site name gets precedence with H1 tag on homepage, div on other pages.
+              {% endcomment %}
+              {% if template == 'index' %}
+                <h1 class="site-header__logo" itemscope itemtype="http://schema.org/Organization">
+              {% else %}
+                <div class="site-header__logo h1" itemscope itemtype="http://schema.org/Organization">
+              {% endif %}
+
+                {% if settings.logo_use_image %}
+                  <a href="/" itemprop="url" class="site-header__logo-link text-center">
+                    <img class="site-header__logo-image" src="{{ 'logo.png' | asset_url }}" alt="{{ shop.name }}" itemprop="logo">
+                  </a>
+                {% else %}
+                  <a href="/" class="site-header__link site-header__logo-link" itemprop="url">{{ shop.name }}</a>
+                {% endif %}
+
+              {% if template == 'index' %}
+                </h1>
+              {% else %}
+                </div>
+              {% endif %}
+
+            </div>
+
+            <div class="grid__item one-third medium-up--one-sixth text-right">
+              <a href="/search" class="site-header__link site-header__search js-drawer-open-top">
+                <span class="icon icon-search" aria-hidden="true"></span>
+                <span class="icon__fallback-text">{{ 'layout.navigation.search' | t }}</span>
+              </a>
+              <a href="/cart" class="site-header__link site-header__cart cart-link{% if settings.cart_type == 'drawer' %} js-drawer-open-right{% endif %}{% if cart.item_count > 0 %} cart-bubble--visible{% endif %}">
+                <span class="icon icon-cart" aria-hidden="true"></span>
+                <span class="icon__fallback-text">{{ 'layout.cart.title' | t }}</span>
+              </a>
+            </div>
+          </div>
+        </header>
+
+        <div class="action-area">
+          {% unless template contains 'product' or template contains 'search' or template contains 'index' %}
+            {% include 'action-bar' %}
+          {% endunless %}
+
+          {% if template contains 'search' and search.performed %}
+            <div class="action-bar">
+              <div class="search__results-count">
+                {{ 'general.search.results_with_count' | t: count: search.results_count, term: search.terms }}
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <main class="main-content" role="main">
+      {{ content_for_layout }}
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      {% comment %}
+        Show Shop Links from footer linklist if it has any links
+      {% endcomment %}
+      {% if linklists.footer.links.size > 0 %}
+        <ul class="list--inline site-footer__linklist">
+          {% for link in linklists.footer.links %}
+            <li class="h4"><a href="{{ link.url }}">{{ link.title }}</a></li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      <div class="grid text-center large-up--grid--table">
+        <div class="grid__item large-up--one-quarter text-center">
+          <ul class="list--inline social-icons social-icons--footer">
+            {% if settings.social_twitter_link != blank %}
+              <li>
+                <a href="{{ settings.social_twitter_link }}" title="{{ 'layout.footer.social_platform' | t: name: shop.name, platform: 'Twitter' }}">
+                  <span class="icon icon-twitter" aria-hidden="true"></span>
+                  <span class="visually-hidden">Twitter</span>
+                </a>
+              </li>
+            {% endif %}
+            {% if settings.social_facebook_link != blank %}
+              <li>
+                <a href="{{ settings.social_facebook_link }}" title="{{ 'layout.footer.social_platform' | t: name: shop.name, platform: 'Facebook' }}">
+                  <span class="icon icon-facebook" aria-hidden="true"></span>
+                  <span class="visually-hidden">Facebook</span>
+                </a>
+              </li>
+            {% endif %}
+            {% if settings.social_pinterest_link != blank %}
+              <li>
+                <a href="{{ settings.social_pinterest_link }}" title="{{ 'layout.footer.social_platform' | t: name: shop.name, platform: 'Pinterest' }}">
+                  <span class="icon icon-pinterest" aria-hidden="true"></span>
+                  <span class="visually-hidden">Pinterest</span>
+                </a>
+              </li>
+            {% endif %}
+            {% if settings.social_google_plus_link != blank %}
+              <li>
+                <a href="{{ settings.social_google_plus_link }}" rel="publisher" title="{{ 'layout.footer.social_platform' | t: name: shop.name, platform: 'Google Plus' }}">
+                  <span class="icon icon-google_plus" aria-hidden="true"></span>
+                  <span class="visually-hidden">Google Plus</span>
+                </a>
+              </li>
+            {% endif %}
+            {% if settings.social_instagram_link != blank %}
+              <li>
+                <a href="{{ settings.social_instagram_link }}" title="{{ 'layout.footer.social_platform' | t: name: shop.name, platform: 'Instagram' }}">
+                  <span class="icon icon-instagram" aria-hidden="true"></span>
+                  <span class="visually-hidden">Instagram</span>
+                </a>
+              </li>
+            {% endif %}
+            {% if settings.social_tumblr_link != blank %}
+              <li>
+                <a href="{{ settings.social_tumblr_link }}" title="{{ 'layout.footer.social_platform' | t: name: shop.name, platform: 'Tumblr' }}">
+                  <span class="icon icon-tumblr" aria-hidden="true"></span>
+                  <span class="visually-hidden">Tumblr</span>
+                </a>
+              </li>
+            {% endif %}
+            {% if settings.social_youtube_link != blank %}
+              <li>
+                <a href="{{ settings.social_youtube_link }}" title="{{ 'layout.footer.social_platform' | t: name: shop.name, platform: 'YouTube' }}">
+                  <span class="icon icon-youtube" aria-hidden="true"></span>
+                  <span class="visually-hidden">YouTube</span>
+                </a>
+              </li>
+            {% endif %}
+            {% if settings.social_vimeo_link != blank %}
+              <li>
+                <a href="{{ settings.social_vimeo_link }}" title="{{ 'layout.footer.social_platform' | t: name: shop.name, platform: 'Vimeo' }}">
+                  <span class="icon icon-vimeo" aria-hidden="true"></span>
+                  <span class="visually-hidden">Vimeo</span>
+                </a>
+              </li>
+            {% endif %}
+            {% if settings.social_fancy_link != blank %}
+              <li>
+                <a href="{{ settings.social_fancy_link }}" title="{{ 'layout.footer.social_platform' | t: name: shop.name, platform: 'Fancy' }}">
+                  <span class="icon icon-fancy" aria-hidden="true"></span>
+                  <span class="visually-hidden">Fancy</span>
+                </a>
+              </li>
+            {% endif %}
+          </ul>
+        </div>
+        <div class="grid__item large-up--one-half">
+          <span class="site-footer__copyright">&copy; {{ 'now' | date: '%Y' }}, <a href="/">{{ shop.name }}</a>. {{ powered_by_link }}</span>
+        </div>
+        <div class="grid__item large-up--one-quarter text-center">
+          {% unless shop.enabled_payment_types == empty %}
+            {% assign payment_icons_available = 'amazon_payments,american_express,bitcoin,cirrus,dankort,diners_club,discover,dogecoin,dwolla,forbrugsforeningen,interac,jcb,litecoin,maestro,master,paypal,visa' | split: ',' %}
+            <ul class="list--inline payment-icons payment-icons--footer">
+              {% for type in shop.enabled_payment_types %}
+                {% if payment_icons_available contains type %}
+                  <li>
+                    <span class="icon icon-{{ type }}" aria-hidden="true"></span>
+                    <span class="icon__fallback-text">{{ type | replace: '_',' ' }}</span>
+                  </li>
+                {% endif %}
+              {% endfor %}
+            </ul>
+          {% endunless %}
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  {{ 'api.jquery.js' | shopify_asset_url | script_tag }}
+  {{ 'theme.js' | asset_url | script_tag }}
+
+  {% if template contains 'product' %}
+    {{ 'option_selection.js' | shopify_asset_url | script_tag }}
+    <script>
+      // Pre-loading product images, to avoid a lag when a variant is selected
+      // that has a variant image.
+      Shopify.Image.preload({{ product.images | json }}, 'large');
+
+      // Set a global variable for theme.js to use on product single init
+      theme.productSingleObject = {{ product | json }};
+      theme.moneyFormat = {{ shop.money_format | json }};
+    </script>
+  {% endif %}
+
+  {% comment %}
+    Enable ajax cart drawer
+  {% endcomment %}
+  {% if settings.cart_type == 'drawer' %}
+    <script id="CartTemplate" type="text/template">
+      {% raw %}
+        <form action="/cart" method="post" novalidate class="cart ajaxcart">
+          <div class="ajaxcart__inner ajaxcart__inner--has-fixed-footer">
+            {{#items}}
+            <div class="ajaxcart__row">
+              <div class="ajaxcart__product" data-line="{{line}}">
+                <div class="grid grid--half-gutters">
+                  <div class="grid__item one-quarter">
+                    <a href="{{url}}" class="ajaxcart__product-image"><img src="{{img}}" alt="{{name}}"></a>
+                  </div>
+                  <div class="grid__item three-quarters">
+                    <div class="ajaxcart__product-name-wrapper">
+                      <a href="{{url}}" class="ajaxcart__product-name h4">{{name}}</a>
+                      {{#if variation}}
+                        <span class="ajaxcart__product-meta">{{variation}}</span>
+                      {{/if}}
+                      {{#properties}}
+                        {{#each this}}
+                          {{#if this}}
+                            <span class="ajaxcart__product-meta">{{@key}}: {{this}}</span>
+                          {{/if}}
+                        {{/each}}
+                      {{/properties}}
+                    </div>
+
+                    <div class="grid grid--table">
+                      <div class="grid__item one-half">
+                        <div class="ajaxcart__qty">
+                          <button type="button" class="ajaxcart__qty-adjust ajaxcart__qty--minus" data-id="{{key}}" data-qty="{{itemMinus}}" data-line="{{line}}">
+                            <span class="icon icon-minus" aria-hidden="true"></span>
+                            <span class="icon__fallback-text">&minus;</span>
+                          </button>
+                          <input type="text" name="updates[]" class="ajaxcart__qty-num" value="{{itemQty}}" min="0" data-id="{{key}}" data-line="{{line}}" aria-label="quantity" pattern="[0-9]*">
+                          <button type="button" class="ajaxcart__qty-adjust ajaxcart__qty--plus" data-id="{{key}}" data-line="{{line}}" data-qty="{{itemAdd}}">
+                            <span class="icon icon-plus" aria-hidden="true"></span>
+                            <span class="icon__fallback-text">+</span>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="grid__item one-half text-right">
+                      {{#if discountsApplied}}
+                        <small class="ajaxcart-item__price-strikethrough"><s>{{{originalLinePrice}}}</s></small>
+                        <br><span>{{{linePrice}}}</span>
+                      {{else}}
+                         <span>{{{linePrice}}}</span>
+                      {{/if}}
+                      </div>
+                    </div>
+                    {{#if discountsApplied}}
+                      <div class="grid grid--table">
+                        <div class="grid__item text-right">
+                          {{#each discounts}}
+                            <small class="ajaxcart-item__discount">{{ this.title }}</small><br>
+                          {{/each}}
+                        </div>
+                      </div>
+                    {{/if}}
+                  </div>
+                </div>
+              </div>
+            </div>
+            {{/items}}
+
+            {% endraw %}{% if settings.cart_notes_enable %}{% raw %}
+              <div class="ajaxcart__row">
+                <label for="CartSpecialInstructions" class="ajaxcart__note txt--minor">{% endraw %}{{ 'cart.general.note' | t }}{% raw %}</label>
+                <textarea name="note" class="input-full" id="CartSpecialInstructions">{{note}}</textarea>
+              </div>
+            {% endraw %}{% endif %}{% raw %}
+          </div>
+          <div class="ajaxcart__footer ajaxcart__footer--fixed">
+            <div class="ajaxcart__subtotal">
+              <div class="grid grid--table">
+                <div class="grid__item two-thirds">
+                  <span class="ajaxcart__subtotal-title h3">{% endraw %}{{ 'cart.general.subtotal' | t }}{% raw %}</span>
+                </div>
+                <div class="grid__item one-third text-right">
+                  <span>{{{totalPrice}}}</span>
+                </div>
+              </div>
+              {{#if totalCartDiscountApplied}}
+                <p class="ajaxcart__savings text-center"><em>{{{totalCartDiscount}}}</em></p>
+              {{/if}}
+            </div>
+            <p class="text-center ajaxcart__note txt--minor">{% endraw %}{{ 'cart.general.shipping_at_checkout' | t }}{% raw %}</p>
+            <button type="submit" class="btn btn--full cart__checkout" name="checkout">
+              {% endraw %}{{ 'cart.general.checkout' | t }}{% raw %}
+            </button>
+          </div>
+        </form>
+      {% endraw %}
+    </script>
+    <script id="JsQty" type="text/template">
+      {% raw %}
+        <div class="js-qty">
+          <button type="button" class="js-qty__adjust js-qty__adjust--minus" data-id="{{key}}" data-qty="{{itemMinus}}">
+            <span class="icon icon-minus" aria-hidden="true"></span>
+            <span class="icon__fallback-text">&minus;</span>
+          </button>
+          <input type="text" class="js-qty__num" value="{{itemQty}}" min="1" data-id="{{key}}" aria-label="quantity" pattern="[0-9]*" name="{{inputName}}" id="{{inputId}}">
+          <button type="button" class="js-qty__adjust js-qty__adjust--plus" data-id="{{key}}" data-qty="{{itemAdd}}">
+            <span class="icon icon-plus" aria-hidden="true"></span>
+            <span class="icon__fallback-text">+</span>
+          </button>
+        </div>
+      {% endraw %}
+    </script>
+
+    <script>
+      jQuery(function($) {
+        ajaxCart.init({
+          formSelector: '.product__form',
+          cartContainer: '#CartContainer',
+          addToCartSelector: '.add-to-cart',
+          moneyFormat: {{ shop.money_format | json }}
+        });
+      });
+    </script>
+  {% endif %}
+
+</body>
+</html>

@@ -1,0 +1,53 @@
+<div class="product-item grid__item {{ grid_item_width }}">
+  <a class="product-item__link {% if settings.product_image_spacing %} product-item__image--margins{% endif %}" href="{{ product.url | within: collection }}">
+    <img class="product-item__image" src="{{ product.featured_image.src | img_url: 'grande' }}" alt="{{ product.featured_image.alt | escape }}">
+
+    <span class="product-item__meta">
+      <span class="product-item__meta__inner">
+        {% if settings.vendor_enable %}
+          <p class="product-item__vendor">{{ product.vendor }}</p>
+        {% endif %}
+        <p class="product-item__title">{{ product.title }}</p>
+        <p class="product-item__price-wrapper">
+          {% comment %}
+            You can show a leading 'from' or 'up to' by checking 'product.price_varies'
+            if your variants have different prices.
+          {% endcomment %}
+          {% if product.compare_at_price > product.price %}
+            <span class="visually-hidden">{{ 'products.general.regular_price' | t }}</span>
+            <s class="product-item__price--reg">{{ product.compare_at_price | money_without_trailing_zeros }}</s>
+            <span class="product-item__price--sale">{{ 'products.general.now_price_html' | t: price: price }}</span>
+          {% else %}
+            {% if product.price_varies %}
+              {{ 'products.general.from_text_html' | t: price: price }}
+            {% else %}
+              {% if product.compare_at_price > product.price %}
+                <span class="visually-hidden">{{ 'products.general.sale_price' | t }}</span>
+              {% else %}
+                <span class="visually-hidden">{{ 'products.general.regular_price' | t }}</span>
+              {% endif %}
+              {{ product.price | money_without_trailing_zeros }}
+            {% endif %}
+          {% endif %}
+        </p>
+
+        {% comment %}
+          Check if the product is sold out.
+        {% endcomment %}
+        {% unless product.available %}
+          <p class="product-item__sold-out">{{ 'products.product.sold_out' | t }}</p>
+        {% endunless %}
+      </span>
+    </span>
+
+    {% comment %}
+      If on sale, add a badge
+    {% endcomment %}
+    {% if product.compare_at_price > product.price %}
+      {% assign sale_text_length = 'products.product.on_sale' | t | size %}
+      <span class="product-item__badge {% if sale_text_length > 6 %}product-item__badge--large{% endif %}">
+        {{ 'products.product.on_sale' | t }}
+      </span>
+    {% endif %}
+  </a>
+</div>

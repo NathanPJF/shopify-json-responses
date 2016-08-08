@@ -1,0 +1,108 @@
+<!-- /templates/index.liquid -->
+{% assign slider_enabled = true %}
+<div class="hero-wrapper">
+  <div class="hero__site-header">
+    <div class="grid grid--no-gutter grid--table site-header__inner">
+      <div class="grid__item one-half">
+        <button type="button" class="site-header__link text-link site-header__toggle-nav js-drawer-open-left">
+          <span class="icon icon-hamburger" aria-hidden="true"></span>
+          <span class="icon__fallback-text">{{ 'layout.navigation.menu' | t }}</span>
+        </button>
+      </div>
+      <div class="grid__item one-half text-right">
+        <a href="/search" class="site-header__link site-header__search js-drawer-open-top">
+          <span class="icon icon-search" aria-hidden="true"></span>
+          <span class="icon__fallback-text">{{ 'layout.navigation.search' | t }}</span>
+        </a>
+        <a href="/cart" class="site-header__link site-header__cart cart-link{% if settings.cart_type == 'drawer' %} js-drawer-open-right{% endif %}{% if cart.item_count > 0 %} cart-bubble--visible{% endif %}">
+          <span class="icon icon-cart" aria-hidden="true"></span>
+          <span class="icon__fallback-text">{{ 'layout.cart.title' | t }}</span>
+        </a>
+      </div>
+    </div>
+  </div>
+  {% unless settings.hero_logo_type == '' %}
+    <div class="hero__logo-wrapper">
+        <h1 class="hero__logo" itemscope itemtype="http://schema.org/Organization">
+          <span class="hero__logo-centered">
+            {% case settings.hero_logo_type %}
+              {% when 'header' %}
+                {% if settings.logo_use_image %}
+                  <img class="hero__logo-image" src="{{ 'logo.png' | asset_url }}" alt="{{ shop.name }}" itemprop="logo">
+                {% else %}
+                  <h1 class="hero__logo-text" itemprop="url">{{ shop.name }}</h1>
+                {% endif %}
+              {% when 'custom' %}
+                <img class="hero__logo-image" src="{{ 'hero-logo.png' | asset_url }}" alt="{{ shop.name }}" itemprop="logo">
+              {% when 'text' %}
+                <h1 class="hero__logo-text" itemprop="url">{{ shop.name }}</h1>
+            {% endcase %}
+          </span>
+        </h1>
+    </div>
+  {% endunless %}
+  <div class="hero" id="Hero">
+    {% for i in (1..4) %}
+      {% capture slide %}hero_slide_{{ i }}_enable{% endcapture %}
+      {% capture slide_img %}hero_slide_{{ i }}.jpg{% endcapture %}
+      {% if forloop.first or settings[slide] %}
+        <div class="hero__slide">
+          <style>
+            @media screen and (max-width: 1024px) and (max-height: 683px) {
+              .hero__image--{{ i }} {
+                background-image: url('{{ slide_img | asset_img_url: '1024x1024' }}');
+              }
+            }
+            @media screen and (min-width: 1025px), screen and (min-height: 684px) {
+              .hero__image--{{ i }} {
+                background-image: url('{{ slide_img | asset_img_url: '2048x2048' }}');
+              }
+            }
+          </style>
+          <div class="hero__image hero__image--{{ i }}" data-image="{{ i }}"></div>
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+  <div class="hero__header">
+    <div class="action-area">
+      {% include 'action-bar' %}
+    </div>
+  </div>
+</div>
+
+{% comment %}
+  Track how many sections are shown
+{% endcomment %}
+{% assign number_of_index_sections = 0 %}
+
+{% if settings.home_section_1 != blank %}
+  {% assign number_of_index_sections = number_of_index_sections | plus: 1 %}
+{% endif %}
+
+{% if settings.home_section_2 != blank %}
+  {% assign number_of_index_sections = number_of_index_sections | plus: 1 %}
+{% endif %}
+
+{% if settings.home_section_3 != blank %}
+  {% assign number_of_index_sections = number_of_index_sections | plus: 1 %}
+{% endif %}
+
+{% comment %}
+  Show the sections
+{% endcomment %}
+{% assign section_index = 0 %}
+{% if settings.home_section_1 != blank %}
+  {% assign section_index = section_index | plus: 1 %}
+  {% include settings.home_section_1, section_number: section_index %}
+{% endif %}
+
+{% if settings.home_section_2 != blank %}
+  {% assign section_index = section_index | plus: 1 %}
+  {% include settings.home_section_2, section_number: section_index %}
+{% endif %}
+
+{% if settings.home_section_3 != blank %}
+  {% assign section_index = section_index | plus: 1 %}
+  {% include settings.home_section_3, section_number: section_index %}
+{% endif %}

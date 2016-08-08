@@ -1,0 +1,201 @@
+<!-- /templates/product.liquid -->
+{% comment %}
+
+  Rich snippets (itemscope, itemtype, etc.) for products are a theme requirement,
+  and allow search engines to easily understand what the content is.
+
+  For more information on these Scheme.org tags, visit:
+    - http://schema.org/docs/gs.html
+
+{% endcomment %}
+
+<div itemscope itemtype="http://schema.org/Product">
+
+  {% comment %}
+    Get first variant, or deep linked one
+  {% endcomment %}
+  {% assign current_variant = product.selected_or_first_available_variant %}
+
+  {% comment %}
+    Get first image
+  {% endcomment %}
+  {% assign featured_image = current_variant.featured_image | default: product.featured_image %}
+
+  <meta itemprop="url" content="{{ shop.url }}{{ product.url }}">
+  <meta itemprop="image" content="{{ featured_image | img_url: 'grande' }}">
+  <meta itemprop="name" content="{{ product.title }}{% if product.variants.size > 1 and product.selected_variant %} - {{ current_variant.title }}{% endif %}">
+
+  <div class="product grid grid--no-gutters" itemprop="offers" itemscope itemtype="http://schema.org/Offer">
+    <meta itemprop="priceCurrency" content="{{ shop.currency }}">
+    <link itemprop="availability" href="http://schema.org/{% if current_variant.available %}InStock{% else %}OutOfStock{% endif %}">
+
+    {% assign first_image = featured_image %}
+
+    {% if product.images.size > 1 and settings.skip_first_product_image and first_image == product.featured_image %}
+      {% assign first_image = product.images[1] %}
+    {% endif %}
+
+    {% comment %}
+      Set variables for product image grid
+    {% endcomment %}
+    {% if settings.product_image_type == 'portrait' %}
+      {% if product.images.size == 1 %}
+        {% assign grid_item_width = '' %}
+      {% elsif product.images.size == 2 and settings.skip_first_product_image %}
+        {% assign grid_item_width = '' %}
+      {% else %}
+        {% assign grid_item_width = 'medium-up--one-half' %}
+      {% endif %}
+      {% assign is_portrait_image = true %}
+    {% else %}
+      {% assign grid_item_width = '' %}
+    {% endif %}
+
+    {% if product.images.size > 0 %}
+
+      {% comment %}
+        Show first image
+      {% endcomment %}
+
+      <div class="product__photo grid__item {{ grid_item_width }}">
+        <img class="product__photo--variant" data-default-src="{{ first_image | img_url: '2048x2048' }}" src="{{ first_image | img_url: '2048x2048' }}" alt="{{ first_image.alt | escape }}">
+      </div>
+
+      {% comment %}
+        Counting images shown on the page
+      {% endcomment %}
+
+      {% assign index = 1 %}
+
+      {% comment %}
+        If we have portrait images, we show two per row, so let's get a second image.
+        That image will be moved down below the description on mobile, hence why we'll use
+        `small--hide`. The image moved down is stored in the variable `duplicate_image`.
+      {% endcomment %}
+
+      {% if is_portrait_image %}
+        {% for image in product.images %}
+          {% unless image == first_image %}
+            {% unless settings.skip_first_product_image and image == product.featured_image %}
+              <div class="product__photo grid__item small--hide {{ grid_item_width }}">
+                <img src="{{ image | img_url: '2048x2048' }}" alt="{{ image.alt | escape }}">
+              </div>
+              {% assign index = index | plus: 1 %}
+              {% assign index_offset = forloop.index %}
+              {% assign duplicate_image = image %}
+              {% break %}
+            {% endunless %}
+          {% endunless %}
+        {% endfor %}
+      {% endif %}
+
+    {% endif %}
+
+    <div class="product__details grid__item">
+      <div class="grid grid--no-gutters product__details-content">
+        <div class="grid__item large-up--two-twelfths large-up--push-two-twelfths medium-up--three-twelfths medium-up--push-one-twelfth">
+          <h2 itemprop="name">{{ product.title }}</h2>
+          <form action="/cart/add" method="post" id="AddToCartForm" enctype="multipart/form-data" class="product__form">
+
+            {% comment %}
+              Select element hidden when JS initializes. Safeguard for JS-disabled.
+            {% endcomment %}
+            <select name="id" id="ProductSelect">
+              {% for variant in product.variants %}
+                <option {% if variant == product.selected_or_first_available_variant %} selected="selected" {% endif %} {% unless variant.available %} disabled="disabled" {% endunless %} value="{{ variant.id }}" data-sku="{{ variant.sku }}">{{ variant.title }} - {% if variant.available %}{{ variant.price | money_with_currency }}{% else %}{{ 'products.product.sold_out' | t }}{% endif %}</option>
+              {% endfor %}
+            </select>
+
+            {% comment %}
+              Not using the quantity selector in this theme. Uncomment to enable.
+            {% endcomment %}
+
+            {% comment %}
+            <div class="product__quantity">
+              <label for="Quantity" class="product__quantity-label js-quantity-selector">{{ 'products.product.quantity' | t }}</label>
+              <input type="number" hidden="hidden" id="Quantity" name="quantity" value="1" min="1" class="js-quantity-selector">
+            </div>
+            {% endcomment %}
+
+            {% assign price = current_variant.price | money_without_trailing_zeros %}
+            <p class="product__price">
+              <meta itemprop="price" content="{{ current_variant.price | divided_by: 100.00 }}">
+              {% if product.compare_at_price_max > product.price %}
+                <span class="visually-hidden">{{ 'products.general.regular_price' | t }}</span>
+                <span class="product__price--reg">{{ current_variant.compare_at_price | money_without_trailing_zeros }}</span>
+                <span class="product__price--sale">{{ 'products.general.now_price_html' | t: price: price }}</span>
+              {% else %}
+                <span class="visually-hidden">{{ 'products.general.regular_price' | t }}</span>
+                <span class="product__price--reg js-price">
+                  {{ price }}
+                </span>
+              {% endif %}
+            </p>
+
+            {% if product.available %}
+              <button type="submit" name="add" id="AddToCart" class="btn add-to-cart">
+                <span class="add-to-cart__text">{{ 'products.product.add_to_cart' | t }}</span>
+              </button>
+            {% else %}
+              <button type="button" class="btn add-to-cart btn--disabled" disabled="disabled">
+                {{ 'products.product.sold_out' | t }}
+              </button>
+            {% endif %}
+
+          </form>
+        </div>
+        <div class="grid__item large-up--one-half large-up--push-three-twelfths medium-up--six-twelfths medium-up--push-two-twelfths">
+          <div class="product-single__errors"></div>
+          <div class="product-single__description rte" itemprop="description">
+            {{ product.description }}
+          </div>
+          {% if settings.social_sharing_products %}
+            {% include 'social-sharing' %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    {% comment %}
+      Show second product photo after description on mobile if
+      image setting style is 'portrait'
+    {% endcomment %}
+    {% if is_portrait_image and product.images.size > 1 %}
+      <div class="product__photo grid__item medium-up--hide {{ grid_item_width }}">
+        <img src="{{ duplicate_image | img_url: '2048x2048' }}" alt="{{ duplicate_image.alt | escape }}">
+      </div>
+    {% endif %}
+
+    {% comment %}
+      Show other product images below product info if there's any left to show
+    {% endcomment %}
+    {% if index < product.images.size %}
+      {% for image in product.images offset:index_offset %}
+        {% unless image == first_image %}
+          {% unless settings.skip_first_product_image and image == product.featured_image %}
+            <div class="product__photo grid__item {{ grid_item_width }}">
+              <img src="{{ image | img_url: '2048x2048' }}" alt="{{ image.alt | escape }}">
+            </div>
+          {% endunless %}
+        {% endunless %}
+      {% endfor %}
+    {% endif %}
+
+    <div class="product__back-button grid__item text-center">
+      <a href="{% if collection %}{{ collection.url }}{% else %}/{% endif %}" class="btn return-link">
+        <span class="icon icon-arrow-left" aria-hidden="true"></span>
+        <span>{{ 'products.product.back' | t }}</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Override default values of theme.strings for each template.
+  // Alternate product templates can change values of
+  // add to cart button, sold out, and unavailable states here.
+  window.productStrings = {
+    addToCart: {{ 'products.product.add_to_cart' | t | json }},
+    soldOut: {{ 'products.product.sold_out' | t | json }}
+  }
+</script>

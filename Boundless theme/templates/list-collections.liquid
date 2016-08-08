@@ -1,0 +1,53 @@
+<!-- /templates/list-collections.liquid -->
+{% comment %}
+
+  This page represents the /collections and /products pages.
+
+  More info:
+    - http://docs.shopify.com/manual/configuration/store-customization/taking-control-of-collections-listing
+
+{% endcomment %}
+
+{% comment %}
+  Loop through each collection, except 'frontpage'
+{% endcomment %}
+{% if collections.size == 1 %}
+  {% assign collection_list_item_width = 'medium-up--one-whole' %}
+{% elsif collections.size == 2 %}
+  {% assign collection_list_item_width = 'medium-up--one-half' %}
+{% elsif collections.size == 3 %}
+  {% assign collection_list_item_width = 'medium-up--one-third' %}
+{% elsif collections.size == 4 %}
+  {% assign collection_list_item_width = 'medium--one-half large-up--one-half widescreen--one-quarter' %}
+{% else %}
+  {% assign collection_list_item_width = 'medium--one-half large-up--one-third widescreen--one-quarter' %}
+{% endif %}
+
+<div class="grid grid--no-gutters collection-grid">
+  {% for collection in collections %}
+    {% unless collection.handle == 'frontpage' %}
+      {% assign no_collection_image = true %}
+
+      <div class="grid__item {{ collection_list_item_width }} collection-grid__item text-center">
+        <a href="{{ collection.url }}" class="collection-grid__link">
+          {% if collection.image %}
+            {% assign no_collection_image = false %}
+            {% capture collection_image_url %}{{ collection.image.src | img_url: 'grande' }}{% endcapture %}
+          {% else %}
+            {% capture collection_image_url %}{{ collection.products.first.featured_image | img_url: 'grande' }}{% endcapture %}
+          {% endif %}
+
+          <div class="collection-grid__link-overlay grid__image" style="background-image: url({{ collection_image_url }})">
+            <div class="collection-grid__title-wrapper">
+              <h3 class="collection-grid__title">
+                {{ collection.title }}
+              </h3>
+            </div>
+          </div>
+
+        </a>
+      </div>
+
+    {% endunless %}
+  {% endfor %}
+</div>
