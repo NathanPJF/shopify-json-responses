@@ -1,0 +1,42 @@
+{% layout none %}
+
+{% comment %}
+  Return search results in json format
+
+  Example: /search?page=2&q=tent&view=json
+
+  Test at http://jsonviewer.stack.hu/
+{% endcomment %}
+
+
+{% paginate search.results by 10 %}
+
+{
+  "results_count": {{ search.results_count }},
+  "terms": {{ search.terms | json }},
+  {% if search.results_count > 0 %}
+  "items": [
+    {% for item in search.results %}
+	  {
+        "title": "{{ item.title }}",
+        "url": "{{ item.url }}",
+        "featured_image": {% if item.featured_image %}"{{ item.featured_image.src | img_url: 'grande' }}"{% else %}false{% endif %},
+        "price": "{{ item.price }}",
+        "vendor": "{{ item.vendor }}",
+        "available": {% if item.available %}true{% else %}false{% endif %},
+        "content": {{ item.content | json }}
+      }
+	  {% unless forloop.last %},{% endunless %}
+    {% endfor %}
+  ],
+  {% endif %}
+  "page": {{ paginate.current_page }},
+  "next_page": {% if paginate.next.is_link %}"{{ paginate.next.url }}"{% else %}false{% endif %}
+}
+
+{% endpaginate %}
+
+
+{% comment %}
+  For ALL the info, use {{ item | json }} instead
+{% endcomment %}

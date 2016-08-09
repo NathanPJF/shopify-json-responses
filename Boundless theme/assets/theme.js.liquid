@@ -1142,7 +1142,10 @@ theme.cacheSelectors = function () {
     // Hero
     $heroWrapper: $('.hero-wrapper'),
     $hero: $('#Hero'),
-    $heroImages: $('.hero__image')
+    $heroImages: $('.hero__image'),
+    
+    // Search 
+    $searchGrid: $('.search-grid')
   }
 
   theme.variables = {
@@ -1300,7 +1303,45 @@ theme.searchSubmit = function () {
       evt.preventDefault();
       theme.cache.$searchInput.focus();
     }
+    
+    evt.preventDefault();
+    var terms = theme.cache.$searchInput.val();
+    $.ajax({
+      url: '/search?q='+terms+'&view=json',
+      type: 'GET',
+      // Have to do "html". dataType: "json" returns Shopify's Resource object
+      dataType: 'html'
+    })
+    .done(function(data) {
+      
+      var searchData = data.trim();
+      var searchJson = JSON.parse(searchData);
+      console.log(searchJson);
+      
+      theme.searchCarousel(searchJson);
+    });
+    
   });
+};
+
+theme.searchCarousel = function(data) {
+  console.log('DATA');
+  console.log(data);
+  var content = "";
+  for(var i in data["items"]){
+     
+     var featured_image = data["items"][i].featured_image;
+     var alt = data["items"][i].title;
+
+     content += '<img class="lazyOwl" data-src="'+featured_image+'" alt="'+alt+'">'
+  }
+  $("#owl-json").html(content);
+  
+  $("#owl-json").owlCarousel({
+    items : 4,
+    lazyLoad : true,
+    navigation : true
+  }); 
 };
 
 theme.socialSharing = function () {
@@ -1713,6 +1754,24 @@ theme.initPagination = function () {
 
 theme.paginate = function (evt) {
   evt.preventDefault();
+  var $this = $(this);
+  var resource = $this.data('resource');
+  var classes = {};
+  switch(resource) {
+    case 'search':
+      classes.items = '.product-item';
+      classes.grid = '.search-grid';
+      break;
+    
+    case 'article':
+      classes.items = '.product-item';
+      classes.grid = '.search-grid';
+      break;
+    
+    default:
+      classes.items = '.product-item';
+      classes.grid = '.collection-grid';
+  }
 
   // only send on ajax request at a time
   if (theme.cache.$showMoreButton.hasClass('btn--ajax-disabled') || theme.cache.$showMoreButton.hasClass('btn--disabled')) {
@@ -1727,11 +1786,13 @@ theme.paginate = function (evt) {
     dataType: 'html'
   })
   .done(function(data) {
+    
     var $data = $(data);
-    var $newItems = $data.find('.product-item');
+    var $newItems = $data.find(classes.items);
     var showMoreUrl = $data.find('.js-show-more').attr('href');
-
-    theme.cache.$collectionGrid.append($newItems);
+    
+    //theme.cache.$collectionGrid.append($newItems);
+    $(classes.grid).append($newItems);
 
     //update grid items selector so that the imagesLoaded plugin knows about them
     theme.cache.$productGridItem = $('.product-item');

@@ -33,7 +33,7 @@
     {% endcomment %}
     {% include 'product-grid-width' %}
 
-    <div class="grid grid--uniform grid--no-gutters">
+    <div class="search-grid grid grid--uniform grid--no-gutters">
       {% for item in search.results %}
         {% comment %}
           If a search item has a price, it's a product
@@ -101,7 +101,10 @@
 
       {% endfor %}
     </div>
-
+    
+    <div class="pagination--infinite">
+      <a href="{{ paginate.next.url }}" class="btn js-show-more" data-resource="search">{{ 'collections.general.show_more' | t }}</a>
+    </div>
     {% if paginate.pages > 1 %}
       <div class="pagination">
         {{ paginate | default_pagination | replace: '&laquo; Previous', '&larr;' | replace: 'Next &raquo;', '&rarr;' }}
