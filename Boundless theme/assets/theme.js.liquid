@@ -1325,15 +1325,23 @@ theme.searchSubmit = function () {
 };
 
 theme.searchCarousel = function(data) {
-  console.log('DATA');
-  console.log(data);
+  //destroy... then rebuild
+  if ($("#owl-json").data('owlCarousel')) {
+    $("#owl-json").data('owlCarousel').destroy();
+  }
+  
   var content = "";
   for(var i in data["items"]){
-     
-     var featured_image = data["items"][i].featured_image;
-     var alt = data["items"][i].title;
+     var item = data["items"][i];
+     var featured_image = item.featured_image;
+     var alt = item.title;
+     var url = item.url;
 
-     content += '<img class="lazyOwl" data-src="'+featured_image+'" alt="'+alt+'">'
+     content += '<div class="search-result">' +
+                  '<a href="'+url+'">' +
+                    '<img class="lazyOwl" data-src="'+featured_image+'" alt="'+alt+'">' +
+                  '</a>' +
+                '</div>';
   }
   $("#owl-json").html(content);
   
